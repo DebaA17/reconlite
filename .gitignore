@@ -6,7 +6,13 @@ __pycache__/
 
 # Result files (optional - you might want to keep examples)
 *.json
-*.txt
+*_results.txt
+*_summary.txt
+recon_*.txt
+output*.txt
+
+# Important: Don't ignore requirements.txt!
+# requirements.txt should always be tracked
 
 # Environment files
 .env
