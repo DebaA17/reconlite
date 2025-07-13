@@ -75,9 +75,23 @@ git clone https://github.com/DebaA17/reconlite.git
 cd reconlite
 ```
 
-### Step 2: Install Python Dependencies
+### Step 2: Install ReconLite
+
+#### Easy Installation (Recommended)
 ```bash
+# Run the installation script to create global command
+./install.sh
+
+# Reload your shell configuration
+source ~/.bashrc
+```
+
+#### Manual Installation (Alternative)
+```bash
+# Just install Python dependencies
 pip install -r requirements.txt
+
+# Use with: python3 reconlite.py domain.com
 ```
 
 ### Step 3: Install System Tools
@@ -115,12 +129,17 @@ sudo mv subfinder /usr/local/bin/
 
 ### Step 4: Verify Installation
 ```bash
-python3 reconlite.py --help
+reconlite --help
 ```
 
 ## 📖 Usage
 
 ### Basic Syntax
+```bash
+reconlite [domain] [options]
+```
+
+**Alternative (if not installed globally):**
 ```bash
 python3 reconlite.py [domain] [options]
 ```
@@ -140,32 +159,32 @@ python3 reconlite.py [domain] [options]
 
 ### Basic Domain Scan
 ```bash
-python3 reconlite.py example.com
+reconlite example.com
 ```
 
 ### Quick Security Assessment
 ```bash
-python3 reconlite.py example.com --quick
+reconlite example.com --quick
 ```
 
 ### Detailed Scan with IP Resolution
 ```bash
-python3 reconlite.py example.com --resolve-ips
+reconlite example.com --resolve-ips
 ```
 
 ### Export Results
 ```bash
-python3 reconlite.py example.com -o my_scan.json --export-summary report.txt
+reconlite example.com -o my_scan.json --export-summary report.txt
 ```
 
 ### Quiet Mode for Automation
 ```bash
-python3 reconlite.py example.com --quiet -o results.json
+reconlite example.com --quiet -o results.json
 ```
 
 ### Custom Timeout
 ```bash
-python3 reconlite.py example.com --timeout 60
+reconlite example.com --timeout 60
 ```
 
 ## 📊 Sample Output
@@ -267,19 +286,19 @@ sudo apt install subfinder dnsrecon nmap dnsutils
 #### Permission denied errors
 ```bash
 # Run with appropriate permissions
-sudo python3 reconlite.py example.com
+sudo reconlite example.com
 ```
 
 #### Timeout errors
 ```bash
 # Increase timeout
-python3 reconlite.py example.com --timeout 60
+reconlite example.com --timeout 60
 ```
 
 #### No subdomains found
 ```bash
 # Try with IP resolution enabled
-python3 reconlite.py example.com --resolve-ips
+reconlite example.com --resolve-ips
 ```
 
 ### Performance Tips
