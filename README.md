@@ -71,7 +71,7 @@ The tool combines multiple reconnaissance techniques and presents the results in
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/debasisbiswas/reconlite.git
+git clone https://github.com/DebaA17/reconlite.git
 cd reconlite
 ```
 
