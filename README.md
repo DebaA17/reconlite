@@ -1,45 +1,52 @@
 # 🔍 ReconLite - Advanced Cyber Reconnaissance Tool
 
+<div align="center">
+
+[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/DebaA17/reconlite)
+[![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen.svg)](https://github.com/DebaA17/reconlite)
+[![Web Version](https://img.shields.io/badge/Web%20Version-recon.debasisbiswas.me-orange.svg)](https://recon.debasisbiswas.me)
+
+</div>
+
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                            🔍 RECONLITE TOOL                                 ║
 ║                                                                              ║
 ║   Advanced DNS & Domain Intelligence Gathering Tool                         ║
-║   ## 👨‍💻 Author
-
-**DEBASIS**
-- 🌐 Website: [https://debasisbiswas.me](https://debasisbiswas.me)
-- 📧 Email: hello@debasisbiswas.me
-- 🐱 GitHub: [@DebaA17](https://github.com/DebaA17)
-- 🔍 **ReconLite Web**: [recon.debasisbiswas.me](https://recon.debasisbiswas.me)
-
----for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
+║   for Ethical Hacking, Red Team Ops & Vulnerability Assessment              ║
 ║                                                                              ║
 ║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
 ║   Tech Stack: subfinder | python-whois | ipwhois | dnspython                ║
 ║                                                                              ║
 ║   Made by: DEBASIS (hello@debasisbiswas.me)                                 ║
+║   🌐 Web Version: https://recon.debasisbiswas.me                            ║
 ║   ⚖️  For Educational Purposes Only - Not for Illegal Activities            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com)
-[![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen.svg)](https://github.com)
-[![Web Version](https://img.shields.io/badge/Web%20Version-recon.debasisbiswas.me-orange.svg)](https://recon.debasisbiswas.me)
+<div align="center">
+
+**A comprehensive reconnaissance tool for DNS & domain intelligence gathering**
+
+🌐 **Try Web Version**: [https://recon.debasisbiswas.me](https://recon.debasisbiswas.me) | 💻 **CLI Version**: Fast & Powerful
+
+</div>
 
 ## 📋 Table of Contents
-- [Overview](#-overview)
-- [Features](#-features)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Examples](#-examples)
-- [Output Formats](#-output-formats)
-- [Legal Disclaimer](#️-legal-disclaimer)
-- [Contributing](#-contributing)
-- [Author](#-author)
-- [License](#-license)
+- [🎯 Overview](#-overview)
+- [✨ Features](#-features)  
+- [🚀 Installation](#-installation)
+- [📖 Usage](#-usage)
+- [🔥 Examples](#-examples)
+- [📊 Output Formats](#-output-formats)
+- [⚖️ Legal Disclaimer](#️-legal-disclaimer)
+- [🛠️ Troubleshooting](#️-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📞 Support](#-support)
+- [👨‍💻 Author](#-author)
+- [📄 License](#-license)
 
 ## 🎯 Overview
 
@@ -49,7 +56,7 @@ The tool combines multiple reconnaissance techniques and presents the results in
 
 ### 🌐 Available Versions
 
-- **📱 Web Version**: [recon.debasisbiswas.me](https://recon.debasisbiswas.me) - Easy-to-use web interface
+- **📱 Web Version**: [https://recon.debasisbiswas.me](https://recon.debasisbiswas.me) - Easy-to-use web interface
 - **💻 CLI Version**: Command-line tool for advanced users and automation
 
 Both versions provide the same powerful reconnaissance capabilities with different interfaces to suit your workflow preferences.
@@ -396,7 +403,7 @@ If you encounter issues or have questions:
 **DEBASIS**
 - 🌐 Website: [https://debasisbiswas.me](https://debasisbiswas.me)
 - 📧 Email: hello@debasisbiswas.me
-- 🐱 GitHub: [@debasisbiswas](https://github.com/DebaA17)
+- 🐱 GitHub: [@DebaA17](https://github.com/DebaA17)
 
 ---
 
