@@ -148,6 +148,8 @@ python3 reconlite.py [domain] [options]
 | Option | Description |
 |--------|-------------|
 | `domain` | Target domain to reconnaissance (required) |
+| `-v, --version` | Show version number |
+| `-V, --Version` | Show detailed version information |
 | `-o, --output` | Output JSON file (default: recon_results.json) |
 | `--quick` | Quick scan (skip port scan and advanced enumeration) |
 | `--quiet` | Quiet mode with minimal output |
@@ -156,6 +158,12 @@ python3 reconlite.py [domain] [options]
 | `--timeout` | Timeout for operations in seconds (default: 30) |
 
 ## 🔥 Examples
+
+### Check Version
+```bash
+reconlite --version          # Short version
+reconlite -V                 # Detailed version info
+```
 
 ### Basic Domain Scan
 ```bash

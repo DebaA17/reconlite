@@ -35,6 +35,13 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
 
+# Version and tool information
+__version__ = "1.0.0"
+__author__ = "DEBASIS"
+__email__ = "hello@debasisbiswas.me"
+__website__ = "https://debasisbiswas.me"
+__github__ = "https://github.com/DebaA17/reconlite"
+
 # Import required libraries
 try:
     import whois as python_whois
@@ -1260,23 +1267,60 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python reconlite.py example.com
-  python reconlite.py example.com -o results.json
-  python reconlite.py example.com --quick --quiet
-  python reconlite.py example.com --resolve-ips
-  python reconlite.py example.com --export-summary report.txt
+  reconlite example.com
+  reconlite example.com -o results.json
+  reconlite example.com --quick --quiet
+  reconlite example.com --resolve-ips
+  reconlite example.com --export-summary report.txt
+  reconlite --version
+  reconlite -V
         """
     )
     
-    parser.add_argument('domain', help='Target domain to reconnaissance')
+    parser.add_argument('domain', nargs='?', help='Target domain to reconnaissance')
     parser.add_argument('-o', '--output', help='Output JSON file', default='recon_results.json')
     parser.add_argument('--quick', action='store_true', help='Quick scan (skip dnsrecon and port scan)')
     parser.add_argument('--quiet', action='store_true', help='Quiet mode (minimal output)')
     parser.add_argument('--resolve-ips', action='store_true', help='Resolve IP addresses for subdomains (slower but more detailed)')
     parser.add_argument('--export-summary', help='Export summary report to text file')
     parser.add_argument('--timeout', type=int, default=30, help='Timeout for operations (default: 30s)')
+    parser.add_argument('-v', '--version', action='version', 
+                        version=f'ReconLite {__version__}',
+                        help='Show version information')
+    parser.add_argument('-V', '--Version', action='store_true', 
+                        help='Show detailed version information')
     
     args = parser.parse_args()
+    
+    # Handle detailed version display
+    if args.Version:
+        print(f"""
+🔍 ReconLite - Advanced Cyber Reconnaissance Tool
+===============================================
+
+Version: {__version__}
+Author:  {__author__}
+Email:   {__email__}
+Website: {__website__}
+GitHub:  {__github__}
+
+Features:
+- DNS Enumeration & Analysis
+- Fast Subdomain Discovery (subfinder)
+- WHOIS Information Gathering
+- IP Intelligence & Geolocation
+- Security Records Analysis (SPF, DMARC, DKIM)
+- Technology Stack Detection
+- Port Scanning & Service Detection
+- JSON Export & Summary Reports
+
+⚖️  For Educational & Authorized Testing Only
+""")
+        sys.exit(0)
+    
+    # Validate domain is provided (unless showing version)
+    if not args.domain:
+        parser.error("Domain argument is required")
     
     # Validate domain
     domain = args.domain.lower().strip()
