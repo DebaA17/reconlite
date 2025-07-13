@@ -5,7 +5,15 @@
 ║                            🔍 RECONLITE TOOL                                 ║
 ║                                                                              ║
 ║   Advanced DNS & Domain Intelligence Gathering Tool                         ║
-║   Perfect for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
+║   ## 👨‍💻 Author
+
+**DEBASIS**
+- 🌐 Website: [https://debasisbiswas.me](https://debasisbiswas.me)
+- 📧 Email: hello@debasisbiswas.me
+- 🐱 GitHub: [@DebaA17](https://github.com/DebaA17)
+- 🔍 **ReconLite Web**: [recon.debasisbiswas.me](https://recon.debasisbiswas.me)
+
+---for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
 ║                                                                              ║
 ║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
 ║   Tech Stack: subfinder | python-whois | ipwhois | dnspython                ║
@@ -19,6 +27,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com)
 [![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen.svg)](https://github.com)
+[![Web Version](https://img.shields.io/badge/Web%20Version-recon.debasisbiswas.me-orange.svg)](https://recon.debasisbiswas.me)
 
 ## 📋 Table of Contents
 - [Overview](#-overview)
@@ -37,6 +46,13 @@
 **ReconLite** is a comprehensive Python-based reconnaissance tool designed for DNS and domain information gathering. It's perfect for ethical hackers, red team operators, penetration testers, and cybersecurity professionals who need to perform thorough domain reconnaissance.
 
 The tool combines multiple reconnaissance techniques and presents the results in a clean, organized format with both terminal output and JSON export capabilities.
+
+### 🌐 Available Versions
+
+- **📱 Web Version**: [recon.debasisbiswas.me](https://recon.debasisbiswas.me) - Easy-to-use web interface
+- **💻 CLI Version**: Command-line tool for advanced users and automation
+
+Both versions provide the same powerful reconnaissance capabilities with different interfaces to suit your workflow preferences.
 
 ## ✨ Features
 
@@ -63,6 +79,18 @@ The tool combines multiple reconnaissance techniques and presents the results in
 - **Performance Optimized**: Fast scans with optional detailed analysis
 
 ## 🚀 Installation
+
+### 🌐 Quick Start (Web Version)
+
+For immediate use without installation:
+```
+🔗 Visit: https://recon.debasisbiswas.me
+```
+No installation required - just open in your browser and start scanning!
+
+### 💻 CLI Installation
+
+For command-line usage and automation:
 
 ### Prerequisites
 - Python 3.7 or higher
@@ -158,6 +186,17 @@ python3 reconlite.py [domain] [options]
 | `--timeout` | Timeout for operations in seconds (default: 30) |
 
 ## 🔥 Examples
+
+### 🌐 Web Version Usage
+```
+1. Visit: https://recon.debasisbiswas.me
+2. Enter your target domain
+3. Choose scan options
+4. Click "Start Reconnaissance"
+5. View results in real-time
+```
+
+### 💻 CLI Version Usage
 
 ### Check Version
 ```bash
@@ -357,7 +396,7 @@ If you encounter issues or have questions:
 **DEBASIS**
 - 🌐 Website: [https://debasisbiswas.me](https://debasisbiswas.me)
 - 📧 Email: hello@debasisbiswas.me
-- 🐱 GitHub: [@debasisbiswas](https://github.com/debasisbiswas)
+- 🐱 GitHub: [@debasisbiswas](https://github.com/DebaA17)
 
 ---
 

@@ -4,8 +4,11 @@ ReconLite - Advanced Cyber Reconnaissance Tool
 A comprehensive Python-based reconnaissance tool for DNS and domain information gathering.
 Perfect for ethical hacking, Red Team operations, and vulnerability assessments.
 
+🌐 Web Version: https://recon.debasisbiswas.me
+💻 CLI Version: Command-line tool for advanced users
+
 Features:
-- DNS Enumeration using dnsrecon
+- DNS Enumeration using subfinder
 - WHOIS Lookup
 - IP Address Resolution & Intelligence
 - Security Records Analysis (SPF, DMARC, DKIM)
@@ -83,8 +86,9 @@ class ReconLite:
 ║   Perfect for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
 ║                                                                              ║
 ║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
-║   Tech Stack: dnsrecon | python-whois | ipwhois | dnspython                 ║
+║   Tech Stack: subfinder | python-whois | ipwhois | dnspython                ║
 ║                                                                              ║
+║   🌐 Web Version: recon.debasisbiswas.me                                     ║
 ║   Made by: DEBASIS (hello@debasisbiswas.me)                                 ║
 ║   ⚖️  For Educational Purposes Only - Not for Illegal Activities            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -1303,6 +1307,11 @@ Author:  {__author__}
 Email:   {__email__}
 Website: {__website__}
 GitHub:  {__github__}
+
+🌐 Web Version: https://recon.debasisbiswas.me
+   Easy-to-use web interface - no installation required!
+
+💻 CLI Version: Command-line tool for advanced users
 
 Features:
 - DNS Enumeration & Analysis
