@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reconlite"
+version = "1.0.0"
+description = "Advanced Cyber Reconnaissance Tool for DNS and domain information gathering."
+authors = [
+    { name = "DEBASIS", email = "hello@debasisbiswas.me" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+dependencies = [
+    "whois",
+    "ipwhois",
+    "dnspython",
+    "requests"
+]
+
+[project.urls]
+Homepage = "https://debasisbiswas.me"
+Repository = "https://github.com/DebaA17/reconlite"
+Web = "https://recon.debasisbiswas.me"
+
+[tool.setuptools.packages.find]
+where = ["reconlite"]
+
+[project.scripts]
+reconlite = "reconlite.reconlite:main"

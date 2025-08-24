@@ -1,0 +1,4 @@
+whois
+ipwhois
+dnspython
+requests
