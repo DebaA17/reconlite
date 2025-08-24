@@ -1,4 +1,0 @@
-whois
-ipwhois
-dnspython
-requests
