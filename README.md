@@ -1,6 +1,9 @@
 # 🔍 ReconLite - Advanced Cyber Reconnaissance Tool
 
 <div align="center">
+  <img src="demo.png" alt="Demo Screenshot" style="max-width: 100%; height: auto;"/>
+</div>
+<div align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
