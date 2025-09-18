@@ -3,10 +3,6 @@
 <div align="center">
   <img src="demo.png" alt="Demo Screenshot" style="max-width: 100%; height: auto;"/>
 </div>
-<div align="center">
-
-
-
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/DebaA17/reconlite)
