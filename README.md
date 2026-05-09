@@ -13,7 +13,6 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/DebaA17/reconlite)
 [![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen.svg)](https://github.com/DebaA17/reconlite)
-[![Web Version](https://img.shields.io/badge/Web%20Version-recon.debasisbiswas.me-orange.svg)](https://recon.debasisbiswas.me)
 
 </div>
 
@@ -25,10 +24,9 @@
 ║   for Ethical Hacking, Red Team Ops & Vulnerability Assessment              ║
 ║                                                                              ║
 ║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
-║   Tech Stack: subfinder | python-whois | ipwhois | dnspython                ║
+║   Tech Stack: python-whois | ipwhois | dnspython | requests                ║
 ║                                                                              ║
-║   Made by: DEBASIS (hello@debasisbiswas.me)                                 ║
-║   🌐 Web Version: https://recon.debasisbiswas.me                            ║
+║   Made by: DEBASIS                                 ║
 ║   ⚖️  For Educational Purposes Only - Not for Illegal Activities            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -37,7 +35,7 @@
 
 **A comprehensive reconnaissance tool for DNS & domain intelligence gathering**
 
-🌐 **Try Web Version**: [https://recon.debasisbiswas.me](https://recon.debasisbiswas.me) | 💻 **CLI Version**: Fast & Powerful
+💻 **CLI Version**: Fast & Powerful
 
 </div>
 
@@ -61,18 +59,15 @@
 
 The tool combines multiple reconnaissance techniques and presents the results in a clean, organized format with both terminal output and JSON export capabilities.
 
-### 🌐 Available Versions
+### 💻 CLI Overview
 
-- **📱 Web Version**: [https://recon.debasisbiswas.me](https://recon.debasisbiswas.me) - Easy-to-use web interface
-- **💻 CLI Version**: Command-line tool for advanced users and automation
-
-Both versions provide the same powerful reconnaissance capabilities with different interfaces to suit your workflow preferences.
+ReconLite is a command-line tool for advanced users and automation.
 
 ## ✨ Features
 
 ### 🔍 Core Reconnaissance Capabilities
 - **DNS Enumeration**: Complete DNS record gathering (A, AAAA, MX, NS, TXT, SOA, CNAME)
-- **Fast Subdomain Discovery**: Powered by subfinder for rapid subdomain enumeration
+- **Subdomain Discovery**: Passive certificate transparency lookup plus built-in DNS probing
 - **WHOIS Information**: Comprehensive domain registration details
 - **IP Intelligence**: ASN lookup, geolocation, and ISP information
 - **Technology Stack Detection**: Web server, CMS, frameworks identification
@@ -94,14 +89,6 @@ Both versions provide the same powerful reconnaissance capabilities with differe
 
 ## 🚀 Installation
 
-### 🌐 Quick Start (Web Version)
-
-For immediate use without installation:
-```
-🔗 Visit: https://recon.debasisbiswas.me
-```
-No installation required - just open in your browser and start scanning!
-
 ### 💻 CLI Installation
 
 For command-line usage and automation:
@@ -119,59 +106,44 @@ cd reconlite
 
 ### Step 2: Install ReconLite
 
-#### Easy Installation (Recommended)
+#### Option 1: Docker from GHCR (Recommended)
 ```bash
-# Run the installation script to create global command
-./install.sh
-
-# Reload your shell configuration
-source ~/.bashrc
+docker run --rm ghcr.io/debaa17/reconlite:latest example.com
 ```
 
-#### Manual Installation (Alternative)
+To save results locally:
 ```bash
-# Just install Python dependencies
+docker run --rm -v "$PWD:/work" ghcr.io/debaa17/reconlite:latest example.com -o /work/results.json
+```
+
+#### Option 2: Local pip install
+```bash
+# Run the installation script for a local install
+./install.sh
+
+# Or install dependencies directly
 pip install -r requirements.txt
 
 # Use with: python3 reconlite.py domain.com
 ```
 
-### Step 3: Install System Tools
-
-#### On Kali Linux / Ubuntu / Debian:
-```bash
-sudo apt update
-sudo apt install dnsrecon dnsutils nmap subfinder
-```
-
-#### On Arch Linux:
-```bash
-sudo pacman -S dnsrecon bind nmap
-yay -S subfinder
-```
-
-#### On CentOS / RHEL / Fedora:
-```bash
-sudo dnf install bind-utils nmap
-# For subfinder, install from GitHub releases or use Go
-```
-
-#### Manual Installation (All Systems):
-For **subfinder** (if not available in package manager):
-```bash
-# Install Go first (if not installed)
-# Method 1: Using Go
-go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-
-# Method 2: Download binary from GitHub releases
-wget https://github.com/projectdiscovery/subfinder/releases/download/v2.6.3/subfinder_2.6.3_linux_amd64.zip
-unzip subfinder_2.6.3_linux_amd64.zip
-sudo mv subfinder /usr/local/bin/
-```
-
-### Step 4: Verify Installation
+### Step 3: Verify Installation
 ```bash
 reconlite --help
+```
+
+ReconLite is Python-only, so no additional system tools are required.
+
+### 🐳 Docker Installation
+
+Use the published GHCR image:
+```bash
+docker run --rm ghcr.io/debaa17/reconlite:latest example.com
+```
+
+Save results to the host:
+```bash
+docker run --rm -v "$PWD:/work" ghcr.io/debaa17/reconlite:latest example.com -o /work/results.json
 ```
 
 ## 📖 Usage
@@ -200,15 +172,6 @@ python3 reconlite.py [domain] [options]
 | `--timeout` | Timeout for operations in seconds (default: 30) |
 
 ## 🔥 Examples
-
-### 🌐 Web Version Usage
-```
-1. Visit: https://recon.debasisbiswas.me
-2. Enter your target domain
-3. Choose scan options
-4. Click "Start Reconnaissance"
-5. View results in real-time
-```
 
 ### 💻 CLI Version Usage
 
@@ -270,7 +233,7 @@ Security Score: 85/100
   Security Score: 85/100
 
 🔍 SUBDOMAIN ENUMERATION: (15 found)
-  Tools used: subfinder
+  Methods used: crtsh, common_dns
   📋 Top subdomains:
     → www.example.com
     → mail.example.com
@@ -333,15 +296,10 @@ Text-based executive summary including:
 
 ### Common Issues
 
-#### "Command not found" errors
+#### Missing Python package errors
 ```bash
-# Check if tools are installed
-which subfinder
-which dnsrecon
-which nmap
-
-# Install missing tools
-sudo apt install subfinder dnsrecon nmap dnsutils
+# Install the required Python packages
+pip install -r requirements.txt
 ```
 
 #### Permission denied errors
@@ -408,7 +366,6 @@ If you encounter issues or have questions:
 ## 👨‍💻 Author
 
 **DEBASIS**
-- 🌐 Website: [https://debasisbiswas.me](https://debasisbiswas.me)
 - 📧 Email: hello@debasisbiswas.me
 - 🐱 GitHub: [@DebaA17](https://github.com/DebaA17)
 
@@ -422,7 +379,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Acknowledgments
 
-- **ProjectDiscovery** for the amazing subfinder tool
 - **Python community** for excellent libraries
 - **Cybersecurity community** for inspiration and feedback
 - **Open source contributors** worldwide
@@ -433,7 +389,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### v1.0.0 (Current)
 - Initial release
-- Fast subdomain enumeration with subfinder
+- Python-only subdomain enumeration with crt.sh and DNS probes
 - Comprehensive DNS analysis
 - Security posture assessment
 - JSON export capabilities
@@ -445,6 +401,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **⭐ If you find ReconLite useful, please give it a star on GitHub! ⭐**
 
-Made with ❤️ by [DEBASIS](https://debasisbiswas.me)
+Made with ❤️ by DEBASIS
 
 </div>

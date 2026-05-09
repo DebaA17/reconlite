@@ -4,11 +4,10 @@ ReconLite - Advanced Cyber Reconnaissance Tool
 A comprehensive Python-based reconnaissance tool for DNS and domain information gathering.
 Perfect for ethical hacking, Red Team operations, and vulnerability assessments.
 
-🌐 Web Version: https://recon.debasisbiswas.me
-💻 CLI Version: Command-line tool for advanced users
+💻 CLI-only tool for advanced users
 
 Features:
-- DNS Enumeration using subfinder
+- DNS Enumeration using Python libraries
 - WHOIS Lookup
 - IP Address Resolution & Intelligence
 - Security Records Analysis (SPF, DMARC, DKIM)
@@ -16,7 +15,6 @@ Features:
 - Command-line Interface
 
 Author: DEBASIS (hello@debasisbiswas.me)
-Website: https://debasisbiswas.me
 Version: 1.0
 
 ⚖️ LEGAL DISCLAIMER:
@@ -26,7 +24,6 @@ domains or networks. Unauthorized scanning may violate laws and regulations.
 The author is not responsible for any misuse of this tool.
 """
 
-import subprocess
 import json
 import socket
 import sys
@@ -38,11 +35,14 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
 
+import dns.query
+import dns.rdatatype
+import dns.zone
+
 # Version and tool information
 __version__ = "1.0.0"
 __author__ = "DEBASIS"
 __email__ = "hello@debasisbiswas.me"
-__website__ = "https://debasisbiswas.me"
 __github__ = "https://github.com/DebaA17/reconlite"
 
 # Import required libraries
@@ -86,193 +86,142 @@ class ReconLite:
 ║   Perfect for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
 ║                                                                              ║
 ║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
-║   Tech Stack: subfinder | python-whois | ipwhois | dnspython                ║
+║   Tech Stack: python-whois | ipwhois | dnspython | requests                 ║
 ║                                                                              ║
-║   🌐 Web Version: recon.debasisbiswas.me                                     ║
 ║   Made by: DEBASIS (hello@debasisbiswas.me)                                 ║
 ║   ⚖️  For Educational Purposes Only - Not for Illegal Activities            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
         """)
     
     def check_dependencies(self):
-        """Check if required tools are installed"""
+        """Check the required Python dependencies."""
         dependencies = {
-            'dnsrecon': 'dnsrecon --help',
-            'dig': 'dig -v',
-            'nslookup': 'nslookup -version',
-            'nmap': 'nmap --version',
-            'subfinder': 'subfinder -version'
+            'python-whois': True,
+            'ipwhois': True,
+            'dnspython': True,
+            'requests': True,
         }
-        
-        available = {}
-        missing = []
-        
-        for tool, command in dependencies.items():
-            try:
-                result = subprocess.run(command.split(), capture_output=True, timeout=5)
-                available[tool] = result.returncode == 0
-                if result.returncode != 0:
-                    missing.append(tool)
-            except (subprocess.TimeoutExpired, FileNotFoundError):
-                available[tool] = False
-                missing.append(tool)
-        
-        if missing:
-            print(f"⚠️  Warning: Missing tools: {', '.join(missing)}")
-            print("Some features may not work properly.")
-            print("On Kali Linux/Ubuntu, install with:")
-            print("sudo apt update && sudo apt install dnsrecon dnsutils nmap")
-            print("For subfinder: go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest")
-        
-        return available
+        return dependencies
     
-    def run_dnsrecon(self, domain: str) -> Dict[str, Any]:
-        """Run dnsrecon for comprehensive DNS enumeration"""
-        print(f"🔍 Running DNS reconnaissance on {domain}...")
-        
+    def run_dns_enumeration(self, domain: str) -> Dict[str, Any]:
+        """Run Python-only DNS enumeration for compatibility with older code paths."""
+        print(f"🔍 Running DNS enumeration on {domain}...")
+
         dns_data = {
-            'standard_records': {},
-            'zone_transfer': {},
+            'standard_records': self.get_dns_records(domain),
+            'zone_transfer': self._attempt_zone_transfer(domain),
             'subdomain_enum': [],
             'raw_output': '',
             'mx_enum': [],
             'srv_enum': []
         }
-        
+
+        standard_records = dns_data['standard_records']
+        for record in standard_records.get('MX', []):
+            if isinstance(record, dict):
+                dns_data['mx_enum'].append({
+                    'domain': domain,
+                    'priority': record.get('priority'),
+                    'exchange': record.get('exchange')
+                })
+
+        for record in standard_records.get('SRV', []):
+            if isinstance(record, dict):
+                dns_data['srv_enum'].append({
+                    'service': record.get('service'),
+                    'priority': record.get('priority'),
+                    'weight': record.get('weight'),
+                    'port': record.get('port'),
+                    'target': record.get('target')
+                })
+
         try:
-            # Standard DNS enumeration
-            print("  → Standard DNS enumeration...")
-            cmd = ['dnsrecon', '-d', domain, '-t', 'std']
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
-            
-            if result.returncode == 0:
-                dns_data['raw_output'] = result.stdout
-                # Parse output for structured data
-                self._parse_dnsrecon_output(result.stdout, dns_data)
-            else:
-                dns_data['error'] = f"dnsrecon failed: {result.stderr}"
-            
-            # Zone transfer attempt
-            print("  → Attempting zone transfer...")
-            try:
-                zt_cmd = ['dnsrecon', '-d', domain, '-t', 'axfr']
-                zt_result = subprocess.run(zt_cmd, capture_output=True, text=True, timeout=30)
-                dns_data['zone_transfer'] = {
-                    'attempted': True,
-                    'successful': 'Zone Transfer successful' in zt_result.stdout,
-                    'output': zt_result.stdout
-                }
-            except subprocess.TimeoutExpired:
-                dns_data['zone_transfer'] = {'attempted': True, 'successful': False, 'error': 'Timeout'}
-            
-            # Subdomain brute force
-            print("  → Subdomain enumeration...")
-            try:
-                # Dictionary to track unique subdomains
-                unique_subdomains = {}
-                
-                # Try common subdomain list first
-                common_subs = ['www', 'mail', 'ftp', 'admin', 'test', 'dev', 'staging', 'api', 'cdn', 'blog']
-                for sub in common_subs:
-                    try:
-                        full_domain = f"{sub}.{domain}"
-                        answers = dns.resolver.resolve(full_domain, 'A')
-                        
-                        # Collect all IPs for this subdomain
-                        ips = [str(answer) for answer in answers]
-                        
-                        if full_domain not in unique_subdomains:
-                            unique_subdomains[full_domain] = {
-                                'subdomain': full_domain,
-                                'ips': ips,
-                                'method': 'common_list'
-                            }
-                        else:
-                            # Add any new IPs to existing subdomain
-                            for ip in ips:
-                                if ip not in unique_subdomains[full_domain]['ips']:
-                                    unique_subdomains[full_domain]['ips'].append(ip)
-                    except:
-                        continue
-                
-                # Try dnsrecon brute force if wordlist exists
-                wordlist_paths = [
-                    '/usr/share/dnsrecon/subdomains-top1mil-5000.txt',
-                    '/usr/share/wordlists/dnsmap.txt',
-                    '/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt'
-                ]
-                
-                for wordlist in wordlist_paths:
-                    if os.path.exists(wordlist):
-                        sub_cmd = ['dnsrecon', '-d', domain, '-t', 'brt', '-D', wordlist]
-                        sub_result = subprocess.run(sub_cmd, capture_output=True, text=True, timeout=60)
-                        
-                        # Parse subdomain results
-                        for line in sub_result.stdout.split('\n'):
-                            if '[A]' in line or '[AAAA]' in line:
-                                match = re.search(r'(\S+\.' + re.escape(domain) + r')\s+\d+\s+IN\s+[A]+\s+(\S+)', line)
-                                if match:
-                                    subdomain = match.group(1)
-                                    ip = match.group(2)
-                                    
-                                    if subdomain not in unique_subdomains:
-                                        unique_subdomains[subdomain] = {
-                                            'subdomain': subdomain,
-                                            'ips': [ip],
-                                            'method': 'dnsrecon_brute'
-                                        }
-                                    else:
-                                        if ip not in unique_subdomains[subdomain]['ips']:
-                                            unique_subdomains[subdomain]['ips'].append(ip)
-                        break
-                
-                # Convert to list format for consistency
-                dns_data['subdomain_enum'] = list(unique_subdomains.values())
-                        
-            except subprocess.TimeoutExpired:
-                dns_data['subdomain_enum'].append({'error': 'Subdomain enumeration timeout'})
-        
+            subdomain_results = self.comprehensive_subdomain_enum(domain, resolve_ips=True)
+            dns_data['subdomain_enum'] = list(subdomain_results.get('subdomains', {}).values())
         except Exception as e:
-            dns_data['error'] = str(e)
-        
+            dns_data['subdomain_enum'] = [{'error': str(e)}]
+
+        dns_data['raw_output'] = self._format_dns_summary(domain, dns_data)
         return dns_data
-    
-    def _parse_dnsrecon_output(self, output: str, dns_data: Dict[str, Any]):
-        """Parse dnsrecon output for structured data"""
-        lines = output.split('\n')
-        for line in lines:
-            # Parse MX records
-            if '[MX]' in line:
-                match = re.search(r'\[MX\]\s+(\S+)\s+(\d+)\s+(\S+)', line)
-                if match:
-                    dns_data['mx_enum'].append({
-                        'domain': match.group(1),
-                        'priority': int(match.group(2)),
-                        'exchange': match.group(3)
-                    })
-            
-            # Parse SRV records
-            if '[SRV]' in line:
-                match = re.search(r'\[SRV\]\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)', line)
-                if match:
-                    dns_data['srv_enum'].append({
-                        'service': match.group(1),
-                        'priority': int(match.group(2)),
-                        'weight': int(match.group(3)),
-                        'port': int(match.group(4)),
-                        'target': match.group(5)
-                    })
+
+    def _attempt_zone_transfer(self, domain: str) -> Dict[str, Any]:
+        """Attempt an AXFR zone transfer using dnspython."""
+        zone_data = {
+            'attempted': True,
+            'successful': False,
+            'nameservers': [],
+            'records': []
+        }
+
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.timeout = 4
+            resolver.lifetime = 4
+            nameservers = [str(answer).rstrip('.') for answer in resolver.resolve(domain, 'NS')]
+            zone_data['nameservers'] = nameservers
+
+            for nameserver in nameservers:
+                server = nameserver
+                try:
+                    server = socket.gethostbyname(nameserver)
+                except Exception:
+                    pass
+
+                try:
+                    transfer = dns.query.xfr(server, domain, lifetime=10)
+                    zone = dns.zone.from_xfr(transfer)
+                    if zone is None:
+                        continue
+
+                    zone_data['successful'] = True
+                    for relative_name, node in zone.nodes.items():
+                        record_name = relative_name.to_text()
+                        if record_name == '@':
+                            record_name = domain
+                        else:
+                            record_name = f"{record_name}.{domain}"
+
+                        for rdataset in node.rdatasets:
+                            record_type = dns.rdatatype.to_text(rdataset.rdtype)
+                            for rdata in rdataset:
+                                zone_data['records'].append({
+                                    'name': record_name.rstrip('.'),
+                                    'type': record_type,
+                                    'value': rdata.to_text()
+                                })
+                    break
+                except Exception:
+                    continue
+        except Exception as e:
+            zone_data['error'] = str(e)
+
+        return zone_data
+
+    def _format_dns_summary(self, domain: str, dns_data: Dict[str, Any]) -> str:
+        """Build a compact text summary for DNS results."""
+        lines = [f"DNS summary for {domain}"]
+        for record_type in ['A', 'AAAA', 'MX', 'NS', 'TXT', 'SOA', 'CNAME', 'SRV', 'CAA', 'DNSKEY']:
+            records = dns_data.get('standard_records', {}).get(record_type, [])
+            if isinstance(records, list) and records:
+                lines.append(f"{record_type}: {len(records)} record(s)")
+        zone_transfer = dns_data.get('zone_transfer', {})
+        if zone_transfer.get('successful'):
+            lines.append(f"AXFR successful via {', '.join(zone_transfer.get('nameservers', []))}")
+        return "\n".join(lines)
     
     def get_dns_records(self, domain: str) -> Dict[str, Any]:
         """Get DNS records using dnspython"""
         print(f"📡 Gathering DNS records for {domain}...")
         
         records = {}
-        record_types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'SOA', 'CNAME', 'PTR']
+        record_types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'SOA', 'CNAME', 'SRV', 'CAA', 'DNSKEY']
         
         for record_type in record_types:
             try:
-                answers = dns.resolver.resolve(domain, record_type)
+                resolver = dns.resolver.Resolver()
+                resolver.timeout = 4
+                resolver.lifetime = 4
+                answers = resolver.resolve(domain, record_type)
                 records[record_type] = []
                 
                 for answer in answers:
@@ -290,6 +239,26 @@ class ReconLite:
                             'retry': answer.retry,
                             'expire': answer.expire,
                             'minimum': answer.minimum
+                        })
+                    elif record_type == 'SRV':
+                        records[record_type].append({
+                            'priority': answer.priority,
+                            'weight': answer.weight,
+                            'port': answer.port,
+                            'target': str(answer.target).rstrip('.')
+                        })
+                    elif record_type == 'CAA':
+                        records[record_type].append({
+                            'flags': answer.flags,
+                            'tag': answer.tag,
+                            'value': answer.value
+                        })
+                    elif record_type == 'DNSKEY':
+                        records[record_type].append({
+                            'flags': answer.flags,
+                            'protocol': answer.protocol,
+                            'algorithm': answer.algorithm,
+                            'key': answer.key
                         })
                     else:
                         records[record_type].append(str(answer).rstrip('.'))
@@ -610,96 +579,41 @@ class ReconLite:
         return intelligence
     
     def quick_port_scan(self, ip_addresses: List[str]) -> Dict[str, Any]:
-        """Perform a quick port scan on common ports"""
+        """Perform a quick port scan on common ports using Python sockets only."""
         print(f"🔍 Quick port scan on common ports...")
-        
+
         port_results = {}
-        common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 8080, 8443]
-        
-        for ip in ip_addresses[:2]:  # Limit to first 2 IPs
-            try:
-                print(f"  → Scanning {ip}...")
-                cmd = ['nmap', '-sS', '-O', '--top-ports', '100', '--max-retries', '1', 
-                       '--host-timeout', '30s', ip]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-                
-                if result.returncode == 0:
-                    port_results[ip] = {
-                        'scan_successful': True,
-                        'open_ports': self._parse_nmap_output(result.stdout),
-                        'os_detection': self._extract_os_info(result.stdout)
-                    }
-                else:
-                    port_results[ip] = {'scan_successful': False, 'error': result.stderr}
-                    
-            except subprocess.TimeoutExpired:
-                port_results[ip] = {'scan_successful': False, 'error': 'Scan timeout'}
-            except FileNotFoundError:
-                # Fallback to manual port checking
-                port_results[ip] = self._manual_port_check(ip, common_ports[:5])
-        
-        return port_results
-    
-    def _parse_nmap_output(self, output: str) -> List[Dict[str, Any]]:
-        """Parse nmap output for open ports"""
-        open_ports = []
-        lines = output.split('\n')
-        
-        for line in lines:
-            if '/tcp' in line and 'open' in line:
-                parts = line.strip().split()
-                if len(parts) >= 3:
-                    port_service = parts[0].split('/')
-                    if len(port_service) >= 2:
+        common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 465, 587, 993, 995, 1433, 1521, 3306, 5432, 8080, 8443]
+
+        for ip in ip_addresses[:2]:
+            print(f"  → Scanning {ip}...")
+            open_ports = []
+
+            for port in common_ports:
+                try:
+                    with socket.create_connection((ip, port), timeout=1.25):
+                        try:
+                            service = socket.getservbyport(port, 'tcp')
+                        except OSError:
+                            service = 'unknown'
+
                         open_ports.append({
-                            'port': int(port_service[0]),
-                            'protocol': port_service[1],
-                            'state': parts[1],
-                            'service': parts[2] if len(parts) > 2 else 'unknown'
+                            'port': port,
+                            'protocol': 'tcp',
+                            'state': 'open',
+                            'service': service
                         })
-        
-        return open_ports
-    
-    def _extract_os_info(self, output: str) -> Dict[str, Any]:
-        """Extract OS information from nmap output"""
-        os_info = {'detected': False, 'os_matches': []}
-        
-        lines = output.split('\n')
-        in_os_section = False
-        
-        for line in lines:
-            if 'OS detection results' in line or 'Running:' in line:
-                in_os_section = True
-                os_info['detected'] = True
-            elif in_os_section and line.strip():
-                if 'OS:' in line or 'Running:' in line:
-                    os_info['os_matches'].append(line.strip())
-            elif in_os_section and not line.strip():
-                break
-        
-        return os_info
-    
-    def _manual_port_check(self, ip: str, ports: List[int]) -> Dict[str, Any]:
-        """Manual port checking when nmap is not available"""
-        open_ports = []
-        
-        for port in ports:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(2)
-                result = sock.connect_ex((ip, port))
-                if result == 0:
-                    open_ports.append({
-                        'port': port,
-                        'protocol': 'tcp',
-                        'state': 'open',
-                        'service': 'unknown'
-                    })
-                sock.close()
-            except:
-                continue
-        
-        return {'scan_successful': True, 'open_ports': open_ports, 'method': 'manual'}
+                except (socket.timeout, OSError):
+                    continue
+
+            port_results[ip] = {
+                'scan_successful': True,
+                'open_ports': open_ports,
+                'os_detection': {'detected': False, 'os_matches': []},
+                'method': 'python_socket'
+            }
+
+        return port_results
     
     def detect_technology_stack(self, domain: str) -> Dict[str, Any]:
         """Detect web technology stack"""
@@ -769,161 +683,139 @@ class ReconLite:
         
         return tech_info
     
+    def _common_subdomain_candidates(self) -> List[str]:
+        """Return a built-in list of common subdomain labels."""
+        return [
+            'www', 'mail', 'ftp', 'admin', 'test', 'dev', 'staging', 'api', 'cdn', 'blog',
+            'app', 'portal', 'secure', 'vpn', 'remote', 'shop', 'store', 'login', 'auth', 'm',
+            'dev-api', 'status', 'support', 'docs', 'help', 'webmail', 'mail1', 'smtp', 'imap', 'pop',
+            'ns1', 'ns2', 'gw', 'gateway', 'edge', 'images', 'static', 'assets', 'files', 'download',
+            'beta', 'preview', 'beta-api', 'internal', 'intranet', 'vpn1', 'mail2', 'mx', 'calendar', 'events'
+        ]
+
+    def _fetch_crtsh_subdomains(self, domain: str) -> List[str]:
+        """Fetch passive subdomain candidates from crt.sh."""
+        discovered = set()
+        url = f"https://crt.sh/?q=%25.{domain}&output=json"
+
+        try:
+            response = requests.get(url, timeout=20, headers={'User-Agent': 'ReconLite/1.0'})
+            response.raise_for_status()
+            certs = response.json()
+
+            if isinstance(certs, dict):
+                certs = [certs]
+
+            for cert in certs:
+                name_value = cert.get('name_value', '') if isinstance(cert, dict) else ''
+                for name in str(name_value).splitlines():
+                    name = name.strip().lower().lstrip('*.')
+                    if name.endswith(domain.lower()) and name != domain.lower():
+                        discovered.add(name)
+        except Exception:
+            return []
+
+        return sorted(discovered)
+
+    def _probe_subdomain(self, subdomain: str) -> List[str]:
+        """Resolve A and AAAA records for a subdomain."""
+        ips = []
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = 2
+        resolver.lifetime = 2
+
+        for record_type in ['A', 'AAAA']:
+            try:
+                answers = resolver.resolve(subdomain, record_type)
+                ips.extend([str(answer) for answer in answers])
+            except Exception:
+                continue
+
+        return sorted(set(ips))
+
     def comprehensive_subdomain_enum(self, domain: str, resolve_ips: bool = False) -> Dict[str, Any]:
-        """Fast subdomain enumeration using subfinder"""
-        print(f"🔍 Fast subdomain enumeration on {domain}...")
-        
+        """Enumerate subdomains using passive certificate data and built-in DNS probes."""
+        print(f"🔍 Subdomain enumeration on {domain}...")
+
         subdomain_data = {
             'subdomains': {},
             'total_count': 0,
-            'tools_used': [],
+            'methods_used': [],
             'statistics': {}
         }
-        
+
         all_subdomains = set()
-        
-        # Method 1: subfinder (primary tool)
-        try:
-            print("  → Running subfinder...")
-            cmd = ['subfinder', '-d', domain, '-silent']
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            
-            if result.returncode == 0:
-                subfinder_subs = set(result.stdout.strip().split('\n'))
-                subfinder_subs = {sub.strip() for sub in subfinder_subs if sub.strip() and sub != domain}
-                all_subdomains.update(subfinder_subs)
-                subdomain_data['tools_used'].append('subfinder')
-                subdomain_data['statistics']['subfinder'] = len(subfinder_subs)
-                print(f"    → Found {len(subfinder_subs)} subdomains with subfinder")
-            else:
-                print("    → subfinder failed")
-                subdomain_data['statistics']['subfinder'] = 0
-        except subprocess.TimeoutExpired:
-            print("    → subfinder timeout")
-            subdomain_data['statistics']['subfinder'] = 0
-        except Exception as e:
-            print(f"    → subfinder error: {str(e)[:50]}")
-            subdomain_data['statistics']['subfinder'] = 0
-        
-        # Method 2: dnsrecon brute force (as backup if subfinder finds very few)
-        if len(all_subdomains) < 5:  # Only run if subfinder didn't find much
-            try:
-                print("  → Running dnsrecon brute force...")
-                wordlist_paths = [
-                    '/usr/share/dnsrecon/subdomains-top1mil-5000.txt',
-                    '/usr/share/wordlists/dnsmap.txt',
-                    '/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt'
-                ]
-                
-                for wordlist in wordlist_paths:
-                    if os.path.exists(wordlist):
-                        cmd = ['dnsrecon', '-d', domain, '-t', 'brt', '-D', wordlist]
-                        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-                        
-                        dnsrecon_subs = set()
-                        for line in result.stdout.split('\n'):
-                            if '[A]' in line or '[AAAA]' in line:
-                                match = re.search(r'(\S+\.' + re.escape(domain) + r')', line)
-                                if match:
-                                    dnsrecon_subs.add(match.group(1))
-                        
-                        new_from_dnsrecon = dnsrecon_subs - all_subdomains
-                        all_subdomains.update(dnsrecon_subs)
-                        subdomain_data['statistics']['dnsrecon'] = len(dnsrecon_subs)
-                        subdomain_data['statistics']['dnsrecon_new'] = len(new_from_dnsrecon)
-                        if 'dnsrecon' not in subdomain_data['tools_used']:
-                            subdomain_data['tools_used'].append('dnsrecon')
-                        print(f"    → Found {len(dnsrecon_subs)} subdomains with dnsrecon ({len(new_from_dnsrecon)} new)")
-                        break
-            except Exception as e:
-                print(f"    → dnsrecon error: {str(e)[:50]}")
-                subdomain_data['statistics']['dnsrecon'] = 0
-        
-        # Method 3: Common subdomain check (basic fallback)
-        common_subs = ['www', 'mail', 'ftp', 'admin', 'test', 'dev', 'staging', 'api', 'cdn', 'blog', 'app', 'portal', 'secure', 'vpn', 'remote']
+
+        print("  → Querying certificate transparency data...")
+        crtsh_subdomains = self._fetch_crtsh_subdomains(domain)
+        if crtsh_subdomains:
+            all_subdomains.update(crtsh_subdomains)
+            subdomain_data['methods_used'].append('crtsh')
+            subdomain_data['statistics']['crtsh'] = len(crtsh_subdomains)
+            print(f"    → Found {len(crtsh_subdomains)} candidates from crt.sh")
+        else:
+            subdomain_data['statistics']['crtsh'] = 0
+
+        print("  → Probing common subdomain names...")
         common_found = 0
-        for sub in common_subs:
-            full_domain = f"{sub}.{domain}"
-            if full_domain not in all_subdomains:
-                try:
-                    dns.resolver.resolve(full_domain, 'A')
-                    all_subdomains.add(full_domain)
-                    common_found += 1
-                except:
-                    continue
-        
+        for candidate in self._common_subdomain_candidates():
+            full_domain = f"{candidate}.{domain}"
+            ips = self._probe_subdomain(full_domain)
+            if ips:
+                all_subdomains.add(full_domain)
+                common_found += 1
+                if resolve_ips:
+                    subdomain_data['subdomains'][full_domain] = {
+                        'subdomain': full_domain,
+                        'ips': ips,
+                        'ipv4_count': len([ip for ip in ips if ':' not in ip]),
+                        'ipv6_count': len([ip for ip in ips if ':' in ip]),
+                        'method': 'common_dns'
+                    }
+
         if common_found > 0:
-            subdomain_data['statistics']['common_check'] = common_found
-            if 'common_check' not in subdomain_data['tools_used']:
-                subdomain_data['tools_used'].append('common_check')
-            print(f"    → Found {common_found} additional subdomains with common check")
-        
-        # Store subdomains with optional IP resolution
+            subdomain_data['methods_used'].append('common_dns')
+            subdomain_data['statistics']['common_dns'] = common_found
+            print(f"    → Found {common_found} subdomains with built-in DNS probes")
+        else:
+            subdomain_data['statistics']['common_dns'] = 0
+
         if resolve_ips:
-            print(f"  → Resolving IP addresses for {len(all_subdomains)} subdomains...")
-            resolved_count = 0
-            for i, subdomain in enumerate(sorted(all_subdomains)):
-                if subdomain and subdomain != domain:
-                    # Show progress every 50 subdomains
-                    if i % 50 == 0 and i > 0:
-                        print(f"    → Progress: {i}/{len(all_subdomains)} subdomains processed...")
-                    
-                    try:
-                        # Try both A and AAAA records with shorter timeout
-                        ips = []
-                        try:
-                            resolver = dns.resolver.Resolver()
-                            resolver.timeout = 2  # 2 second timeout
-                            resolver.lifetime = 2
-                            a_records = resolver.resolve(subdomain, 'A')
-                            ips.extend([str(record) for record in a_records])
-                        except:
-                            pass
-                        
-                        try:
-                            resolver = dns.resolver.Resolver()
-                            resolver.timeout = 2
-                            resolver.lifetime = 2
-                            aaaa_records = resolver.resolve(subdomain, 'AAAA')
-                            ips.extend([str(record) for record in aaaa_records])
-                        except:
-                            pass
-                        
-                        if ips:
-                            subdomain_data['subdomains'][subdomain] = {
-                                'subdomain': subdomain,
-                                'ips': ips,
-                                'ipv4_count': len([ip for ip in ips if ':' not in ip]),
-                                'ipv6_count': len([ip for ip in ips if ':' in ip])
-                            }
-                            resolved_count += 1
-                        else:
-                            # Subdomain exists but no A/AAAA records (might have CNAME only)
-                            subdomain_data['subdomains'][subdomain] = {
-                                'subdomain': subdomain,
-                                'ips': [],
-                                'note': 'No A/AAAA records found'
-                            }
-                    except Exception as e:
-                        # Subdomain might have been removed or is unreachable
-                        continue
-            
+            remaining_subdomains = sorted(all_subdomains - set(subdomain_data['subdomains'].keys()))
+            if remaining_subdomains:
+                print(f"  → Resolving IP addresses for {len(remaining_subdomains)} additional subdomains...")
+
+            resolved_count = len(subdomain_data['subdomains'])
+            for index, subdomain in enumerate(remaining_subdomains):
+                if index and index % 50 == 0:
+                    print(f"    → Progress: {index}/{len(remaining_subdomains)} subdomains processed...")
+
+                ips = self._probe_subdomain(subdomain)
+                if ips:
+                    subdomain_data['subdomains'][subdomain] = {
+                        'subdomain': subdomain,
+                        'ips': ips,
+                        'ipv4_count': len([ip for ip in ips if ':' not in ip]),
+                        'ipv6_count': len([ip for ip in ips if ':' in ip]),
+                        'method': 'crtsh'
+                    }
+                    resolved_count += 1
+
             print(f"  → Successfully resolved IPs for: {resolved_count} subdomains")
         else:
             print(f"  → Storing {len(all_subdomains)} subdomains (skipping IP resolution for speed)...")
             for subdomain in sorted(all_subdomains):
-                if subdomain and subdomain != domain:
-                    subdomain_data['subdomains'][subdomain] = {
-                        'subdomain': subdomain,
-                        'ips': [],  # Empty for speed
-                        'note': 'IP resolution skipped for performance'
-                    }
-        
+                subdomain_data['subdomains'][subdomain] = {
+                    'subdomain': subdomain,
+                    'ips': [],
+                    'note': 'IP resolution skipped for performance'
+                }
+
         subdomain_data['total_count'] = len(subdomain_data['subdomains'])
-        
+
         print(f"  → ✅ Total unique subdomains found: {subdomain_data['total_count']}")
-        print(f"  → Tools used: {', '.join(subdomain_data['tools_used'])}")
-        
+        print(f"  → Methods used: {', '.join(subdomain_data['methods_used']) if subdomain_data['methods_used'] else 'none'}")
+
         return subdomain_data
     
     def run_reconnaissance(self, domain: str, full_scan: bool = True, resolve_ips: bool = False) -> Dict[str, Any]:
@@ -969,15 +861,9 @@ class ReconLite:
                     })
                 self.results['subdomain_enum'] = subdomain_list
             except Exception as e:
-                print(f"  → Subdomain enum failed, falling back to basic method...")
-                # Fallback to original dnsrecon method
-                try:
-                    dnsrecon_results = self.run_dnsrecon(domain)
-                    self.results['dnsrecon'] = dnsrecon_results
-                    self.results['subdomain_enum'] = dnsrecon_results.get('subdomain_enum', [])
-                except Exception as e2:
-                    self.results['subdomain_enum'] = []
-                    self.results['dnsrecon'] = {'error': str(e2)}
+                print(f"  → Subdomain enumeration failed: {e}")
+                self.results['subdomain_enum'] = []
+                self.results['dns_enumeration'] = {'error': str(e)}
             
             # Quick Port Scan
             if self.results['ip_info'].get('ipv4_addresses'):
@@ -1283,7 +1169,7 @@ Examples:
     
     parser.add_argument('domain', nargs='?', help='Target domain to reconnaissance')
     parser.add_argument('-o', '--output', help='Output JSON file', default='recon_results.json')
-    parser.add_argument('--quick', action='store_true', help='Quick scan (skip dnsrecon and port scan)')
+    parser.add_argument('--quick', action='store_true', help='Quick scan (skip subdomain enumeration and port scan)')
     parser.add_argument('--quiet', action='store_true', help='Quiet mode (minimal output)')
     parser.add_argument('--resolve-ips', action='store_true', help='Resolve IP addresses for subdomains (slower but more detailed)')
     parser.add_argument('--export-summary', help='Export summary report to text file')
@@ -1305,17 +1191,13 @@ Examples:
 Version: {__version__}
 Author:  {__author__}
 Email:   {__email__}
-Website: {__website__}
 GitHub:  {__github__}
 
-🌐 Web Version: https://recon.debasisbiswas.me
-   Easy-to-use web interface - no installation required!
-
-💻 CLI Version: Command-line tool for advanced users
+💻 CLI-only Version: Command-line tool for advanced users
 
 Features:
 - DNS Enumeration & Analysis
-- Fast Subdomain Discovery (subfinder)
+- Passive and active Subdomain Discovery
 - WHOIS Information Gathering
 - IP Intelligence & Geolocation
 - Security Records Analysis (SPF, DMARC, DKIM)
@@ -1344,11 +1226,6 @@ Features:
         tool.banner()
         print(f"🎯 Target: {domain}")
         print(f"📊 Mode: {'Quick' if args.quick else 'Full'} scan")
-        
-        # Check dependencies
-        available_tools = tool.check_dependencies()
-        if not args.quick and not available_tools.get('dnsrecon', False):
-            print("⚠️  dnsrecon not available, some features will be limited")
     
     try:
         # Run reconnaissance

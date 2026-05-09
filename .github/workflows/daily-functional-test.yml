@@ -1,0 +1,33 @@
+name: Daily Functional Test
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Verify help output
+        run: python reconlite.py --help
+
+      - name: Run functional smoke test
+        run: |
+          python reconlite.py example.com --quick --quiet -o smoke-test-results.json
+          test -s smoke-test-results.json
