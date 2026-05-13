@@ -51,12 +51,16 @@ try:
     import dns.resolver
     import dns.reversename
     import requests
-    from ddgs import DDGS
 except ImportError as e:
     print(f"❌ Missing required library: {e}")
     print("Please install required dependencies:")
     print("pip install -r requirements.txt")
     sys.exit(1)
+
+try:
+    from ddgs import DDGS
+except ImportError:
+    DDGS = None
 
 class ReconLite:
     """Main reconnaissance tool class"""
@@ -727,6 +731,9 @@ class ReconLite:
     def _search_duckduckgo_subdomains(self, domain: str) -> List[str]:
         """Search for subdomains using DuckDuckGo site: search."""
         discovered = set()
+        if DDGS is None:
+            return []
+
         try:
             # Use DuckDuckGo to search for subdomains
             ddgs = DDGS()
