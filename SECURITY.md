@@ -2,7 +2,7 @@
 
 If you discover any security vulnerability in this project, please report it to:
 
-**Email:** forensic@debasisbiswas.me
+**Email:** security@debasisbiswas.in
 
 We appreciate responsible disclosure and will respond promptly to any reports.
 

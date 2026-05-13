@@ -11,7 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY reconlite.py ./reconlite.py
 COPY README.md ./README.md
 
-RUN useradd --create-home --shell /bin/bash reconlite
-USER reconlite
-
 ENTRYPOINT ["python", "/app/reconlite.py"]

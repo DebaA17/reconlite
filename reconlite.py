@@ -14,7 +14,7 @@ Features:
 - JSON Export for further analysis
 - Command-line Interface
 
-Author: DEBASIS (hello@debasisbiswas.me)
+Author: DEBASIS
 Version: 1.0
 
 ⚖️ LEGAL DISCLAIMER:
@@ -31,6 +31,7 @@ import argparse
 import re
 import os
 import time
+import io
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
@@ -42,8 +43,6 @@ import dns.zone
 # Version and tool information
 __version__ = "1.0.0"
 __author__ = "DEBASIS"
-__email__ = "hello@debasisbiswas.me"
-__github__ = "https://github.com/DebaA17/reconlite"
 
 # Import required libraries
 try:
@@ -52,6 +51,7 @@ try:
     import dns.resolver
     import dns.reversename
     import requests
+    from ddgs import DDGS
 except ImportError as e:
     print(f"❌ Missing required library: {e}")
     print("Please install required dependencies:")
@@ -79,18 +79,18 @@ class ReconLite:
     def banner(self):
         """Display tool banner"""
         print("""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                            🔍 RECONLITE TOOL                                 ║
-║                                                                              ║
-║   Advanced DNS & Domain Intelligence Gathering Tool                         ║
-║   Perfect for Ethical Hacking, Red Team Ops & Vulnerability Assessment      ║
-║                                                                              ║
-║   Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON Export    ║
-║   Tech Stack: python-whois | ipwhois | dnspython | requests                 ║
-║                                                                              ║
-║   Made by: DEBASIS (hello@debasisbiswas.me)                                 ║
-║   ⚖️  For Educational Purposes Only - Not for Illegal Activities            ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════════════╗
+║                   🔍 RECONLITE TOOL                               ║
+║                                                                    ║
+║  Advanced DNS & Domain Intelligence Gathering Tool                ║
+║  For Ethical Hacking, Red Team Ops & Vulnerability Assessment     ║
+║                                                                    ║
+║  Features: DNS Enum | WHOIS | IP Intel | Security Records | JSON  ║
+║  Tech Stack: python-whois | ipwhois | dnspython | requests        ║
+║                                                                    ║
+║  Made by: DEBASIS                                                 ║
+║  ⚖️  For Educational Purposes Only - Not for Illegal Activities   ║
+╚════════════════════════════════════════════════════════════════════╝
         """)
     
     def check_dependencies(self):
@@ -411,7 +411,14 @@ class ReconLite:
         print(f"📋 Fetching WHOIS information for {domain}...")
         
         try:
-            w = python_whois.whois(domain)
+            # Suppress stderr from whois library to avoid printing socket errors
+            old_stderr = sys.stderr
+            sys.stderr = io.StringIO()
+            
+            try:
+                w = python_whois.whois(domain)
+            finally:
+                sys.stderr = old_stderr
             
             # Convert datetime objects to strings for JSON serialization
             whois_data = {}
@@ -717,6 +724,37 @@ class ReconLite:
 
         return sorted(discovered)
 
+    def _search_duckduckgo_subdomains(self, domain: str) -> List[str]:
+        """Search for subdomains using DuckDuckGo site: search."""
+        discovered = set()
+        try:
+            # Use DuckDuckGo to search for subdomains
+            ddgs = DDGS()
+            query = f"site:{domain}"
+            
+            results = ddgs.text(query, max_results=50)
+            
+            for result in results:
+                title = result.get('title', '').lower()
+                body = result.get('body', '').lower()
+                href = result.get('href', '').lower()
+                
+                # Extract subdomains from the results
+                for text in [title, body, href]:
+                    # Look for patterns like subdomain.domain.com
+                    import re as regex_module
+                    pattern = rf'([a-z0-9-]+\.)*{regex_module.escape(domain.lower())}'
+                    matches = regex_module.findall(pattern, text)
+                    for match in matches:
+                        subdomain = (match + domain.lower()).rstrip('.')
+                        if subdomain.endswith(domain.lower()) and subdomain != domain.lower():
+                            discovered.add(subdomain)
+        except Exception as e:
+            # Silently fail if DuckDuckGo search fails
+            pass
+        
+        return sorted(discovered)
+
     def _probe_subdomain(self, subdomain: str) -> List[str]:
         """Resolve A and AAAA records for a subdomain."""
         ips = []
@@ -755,6 +793,18 @@ class ReconLite:
             print(f"    → Found {len(crtsh_subdomains)} candidates from crt.sh")
         else:
             subdomain_data['statistics']['crtsh'] = 0
+
+        print("  → Searching DuckDuckGo for subdomains...")
+        ddg_subdomains = self._search_duckduckgo_subdomains(domain)
+        if ddg_subdomains:
+            ddg_new = set(ddg_subdomains) - all_subdomains
+            if ddg_new:
+                all_subdomains.update(ddg_new)
+                subdomain_data['methods_used'].append('duckduckgo')
+                subdomain_data['statistics']['duckduckgo'] = len(ddg_new)
+                print(f"    → Found {len(ddg_new)} new subdomains from DuckDuckGo")
+        if 'duckduckgo' not in subdomain_data['statistics']:
+            subdomain_data['statistics']['duckduckgo'] = 0
 
         print("  → Probing common subdomain names...")
         common_found = 0
@@ -884,21 +934,38 @@ class ReconLite:
         print(f"Scan Time: {self.results['timestamp']}")
         print(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        # DNS Records Summary
-        print("\n📡 DNS RECORDS SUMMARY:")
+        # DNS Records - Detailed View
+        print("\n📡 DNS RECORDS (DETAILED):")
         dns_records = self.results['dns_records']
-        for record_type, records in dns_records.items():
+        for record_type, records in sorted(dns_records.items()):
             if isinstance(records, list) and records:
-                print(f"  {record_type:6}: {len(records)} record(s)")
-                if record_type == 'A':
-                    for record in records[:3]:
-                        print(f"         → {record}")
-                elif record_type == 'MX':
-                    for record in records[:3]:
+                print(f"  {record_type}:")
+                if record_type == 'MX':
+                    for record in records:
                         if isinstance(record, dict):
-                            print(f"         → {record['priority']:2} {record['exchange']}")
+                            print(f"    → Priority {record.get('priority')}: {record.get('exchange')}")
+                        else:
+                            print(f"    → {record}")
+                elif record_type == 'NS':
+                    for record in records:
+                        print(f"    → {record}")
+                elif record_type == 'SOA':
+                    for record in records:
+                        if isinstance(record, dict):
+                            print(f"    → Primary NS: {record.get('mname', 'N/A')}")
+                            print(f"    → Responsible Email: {record.get('rname', 'N/A')}")
+                            print(f"    → Serial: {record.get('serial', 'N/A')}")
+                        else:
+                            print(f"    → {record}")
+                elif record_type == 'TXT':
+                    for record in records:
+                        txt_val = str(record)[:80]
+                        print(f"    → {txt_val}{'...' if len(str(record)) > 80 else ''}")
+                else:
+                    for record in records:
+                        print(f"    → {record}")
             elif isinstance(records, dict) and 'error' not in records:
-                print(f"  {record_type:6}: Complex record found")
+                print(f"  {record_type}: Complex record found")
         
         # Security Analysis
         print("\n🔒 SECURITY ANALYSIS:")
@@ -988,14 +1055,15 @@ class ReconLite:
         # Subdomain Enumeration
         if self.results.get('comprehensive_subdomains'):
             comp_subs = self.results['comprehensive_subdomains']
-            total_found = comp_subs['total_count']
-            tools_used = ', '.join(comp_subs['tools_used'])
+            total_found = comp_subs.get('total_count', 0)
+            methods = comp_subs.get('methods_used', []) or comp_subs.get('tools_used', [])
+            tools_used = ', '.join(methods) if methods else 'none'
             
             print(f"\n🔍 SUBDOMAIN ENUMERATION: ({total_found} found)")
             print(f"  Tools used: {tools_used}")
             
             # Show statistics
-            stats = comp_subs['statistics']
+            stats = comp_subs.get('statistics', {})
             for tool, count in stats.items():
                 if tool.endswith('_new'):
                     continue
@@ -1005,32 +1073,25 @@ class ReconLite:
                 else:
                     print()
             
-            # Show top subdomains
+            # Show all subdomains
             if comp_subs['subdomains']:
-                print(f"\n  📋 Top subdomains (showing first 10):")
-                shown = 0
-                for subdomain, data in list(comp_subs['subdomains'].items())[:10]:
+                print(f"\n  📋 All Subdomains Found ({total_found}):")
+                for subdomain, data in sorted(comp_subs['subdomains'].items()):
                     ips = data.get('ips', [])
+                    method = data.get('method', 'unknown')
                     if ips:
-                        # Show first 2 IPs if multiple
-                        ip_display = ', '.join(ips[:2])
-                        if len(ips) > 2:
-                            ip_display += f" (+{len(ips) - 2} more)"
-                        print(f"    → {subdomain} → {ip_display}")
+                        # Show first 3 IPs
+                        ip_display = ', '.join(ips[:3])
+                        if len(ips) > 3:
+                            ip_display += f" (+{len(ips) - 3} more)"
+                        print(f"    → {subdomain:40} | {ip_display:30} | [{method}]")
                     else:
                         note = data.get('note', 'No IP resolved')
-                        if 'skipped for performance' in note:
-                            print(f"    → {subdomain}")
-                        else:
-                            print(f"    → {subdomain} → {note}")
-                    shown += 1
-                
-                if total_found > 10:
-                    print(f"    ... and {total_found - 10} more subdomains")
+                        print(f"    → {subdomain:40} | {note:30} | [{method}]")
                     
                 # Show tip about IP resolution
                 if any('skipped for performance' in data.get('note', '') for data in comp_subs['subdomains'].values()):
-                    print(f"\n  💡 Tip: Use --resolve-ips flag to resolve IP addresses (slower)")
+                    print(f"\n  💡 Tip: Use --resolve-ips flag to resolve IP addresses for all subdomains")
             else:
                 print("  ❌ No valid subdomains resolved")
                 
@@ -1101,7 +1162,7 @@ class ReconLite:
             print("  ❌ No WHOIS information available")
         
         print("\n" + "=" * 80)
-        print("🔧 Made by: DEBASIS (hello@debasisbiswas.me)")
+        print("🔧 Made by: DEBASIS")
         print("⚖️  For educational purposes only - Not for illegal activities")
         print("=" * 80)
     
@@ -1190,8 +1251,6 @@ Examples:
 
 Version: {__version__}
 Author:  {__author__}
-Email:   {__email__}
-GitHub:  {__github__}
 
 💻 CLI-only Version: Command-line tool for advanced users
 
@@ -1260,8 +1319,8 @@ Features:
                 print("  - Set up DKIM signing for email integrity")
         
     except KeyboardInterrupt:
-        print("\n❌ Operation cancelled by user")
-        sys.exit(1)
+        print("\n⚠️  Operation cancelled by user")
+        sys.exit(0)
     except Exception as e:
         print(f"\n❌ Error: {e}")
         if not args.quiet:

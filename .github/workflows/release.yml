@@ -1,0 +1,125 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        run: |
+          python reconlite.py --help > /dev/null
+          python reconlite.py --version
+      
+      - name: Generate checksums
+        id: checksums
+        run: |
+          sha256sum reconlite.py requirements.txt README.md LICENSE > CHECKSUMS.txt
+          cat CHECKSUMS.txt
+          
+          RECONLITE_SHA=$(sha256sum reconlite.py | cut -d' ' -f1)
+          echo "reconlite_sha=$RECONLITE_SHA" >> $GITHUB_OUTPUT
+          
+          REQ_SHA=$(sha256sum requirements.txt | cut -d' ' -f1)
+          echo "requirements_sha=$REQ_SHA" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          release_name: ReconLite ${{ steps.get_version.outputs.version }}
+          body: |
+            # ReconLite ${{ steps.get_version.outputs.version }}
+            
+            Advanced Cyber Reconnaissance Tool for DNS and domain intelligence gathering.
+            
+            ## Installation
+            
+            ### Using Homebrew
+            ```bash
+            brew tap DebaA17/tap
+            brew install reconlite
+            ```
+            
+            ### Using Docker
+            ```bash
+            docker run --rm ghcr.io/debaa17/reconlite:latest example.com
+            ```
+            
+            ### Manual Installation
+            ```bash
+            git clone https://github.com/DebaA17/reconlite.git
+            cd reconlite
+            pip install -r requirements.txt
+            python reconlite.py --help
+            ```
+            
+            ## Checksums
+            
+            Verify file integrity:
+            ```
+            sha256sum -c CHECKSUMS.txt
+            ```
+            
+            **reconlite.py:**
+            ```
+            ${{ steps.checksums.outputs.reconlite_sha }}
+            ```
+            
+            **requirements.txt:**
+            ```
+            ${{ steps.checksums.outputs.requirements_sha }}
+            ```
+            
+            ## Features
+            - 🔍 DNS Enumeration & Analysis
+            - 📋 WHOIS Information Gathering
+            - 🌐 IP Intelligence & Geolocation
+            - 🔒 Security Records Analysis (SPF, DMARC, DKIM, DNSSEC, CAA)
+            - 🎯 Subdomain Discovery (Certificate Transparency, DuckDuckGo Search, DNS Probes)
+            - 🔌 Port Scanning
+            - 📊 JSON & Text Export
+            - 💻 CLI & Docker Support
+            
+          draft: false
+          prerelease: false
+      
+      - name: Upload checksums asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./CHECKSUMS.txt
+          asset_name: CHECKSUMS.txt
+          asset_content_type: text/plain
