@@ -120,6 +120,14 @@ pip install -r requirements.txt
 # Use with: python3 reconlite.py domain.com
 ```
 
+#### Option 3: Homebrew (macOS / Linuxbrew)
+If you use Homebrew, you can install via the tap once the formula is published:
+```bash
+brew tap DebaA17/tap
+brew install reconlite
+
+```
+
 ### Step 3: Verify Installation
 ```bash
 reconlite --help

@@ -1,0 +1,59 @@
+name: Daily Homebrew ReconLite Functional Test
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # daily at 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-homebrew-reconlite
+  cancel-in-progress: true
+
+jobs:
+  macos-homebrew-test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Homebrew is available
+        run: |
+          if ! command -v brew >/dev/null; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo 'Homebrew installed'
+          fi
+          brew update || true
+
+      - name: Tap homebrew-tap
+        run: |
+          # Use your tap repo; this will create the tap locally
+          brew tap DebaA17/tap https://github.com/DebaA17/homebrew-tap || true
+
+      - name: Install reconlite from tap (build from source)
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          set -e
+          brew install reconlite || brew reinstall reconlite
+
+      - name: Run quick functional checks
+        run: |
+          # Basic smoke checks - avoid heavy network activity
+          reconlite --version
+          reconlite --help
+
+      - name: Optional quick run (disabled by default)
+        if: ${{ false }}
+        run: |
+          # Enable this if you want a small network scan against example.com
+          reconlite example.com --quick --no-color --timeout 15
+
+      - name: Cleanup
+        continue-on-error: true
+        run: |
+          brew uninstall --force reconlite || true
+          brew untap DebaA17/tap || true
