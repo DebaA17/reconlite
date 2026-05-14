@@ -40,6 +40,10 @@ jobs:
           set -e
           brew install reconlite || brew reinstall reconlite
 
+      - name: Run brew test
+        run: |
+          brew test reconlite
+
       - name: Run quick functional checks
         run: |
           # Basic smoke checks - avoid heavy network activity
