@@ -41,7 +41,7 @@ import dns.rdatatype
 import dns.zone
 
 # Version and tool information
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __author__ = "DEBASIS"
 
 # Import required libraries
